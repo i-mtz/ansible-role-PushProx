@@ -1,0 +1,41 @@
+---
+pushprox_version: 0.2.0
+pushprox_binary_install_dir: "/usr/local/bin"
+pushprox_binary_url: "https://github.com/{{ _pushprox_repo }}/releases/download/v{{ pushprox_version }}/\
+                              PushProx-{{ pushprox_version }}.linux-{{ go_arch }}.tar.gz"
+pushprox_checksums_url: "https://github.com/{{ _pushprox_repo }}/releases/download/v{{ pushprox_version }}/sha256sums.txt"
+pushprox_skip_install: false
+pushprox_force_install: true # we don't have any option to get the version of the binaries so if we want to update we have to force an install
+
+# we can use this to upgrade the binaries if needed as they don't provide a way to check the version on exec
+pushprox_proxy_binary_checksum: '02ce6cf195303fe678fd255f22fc60349e0610bce609796c1338eec98debe25e'
+pushprox_client_binary_checksum: '84f3292aa56a9d9cab6e7fcd2e0d2c454a044bb5ba666cc2bd7cbe06923df874'
+
+
+pushprox_system_user: 'pushprox'
+pushprox_system_group: 'pushprox'
+
+# proxy config
+pushprox_proxy_mode: false
+pushprox_proxy_registration_timeout: '5m'
+pushprox_proxy_listen_address: '' # this is needed
+pushprox_proxy_listen_port: '8080'
+pushprox_proxy_scrape_max_timeout: '5m'
+pushprox_proxy_scrape_default_timeout: '15s'
+pushprox_proxy_log_level: 'info'
+pushprox_proxy_log_format: 'logfmt' # or json
+
+
+# client config
+pushprox_client_mode: true
+pushprox_client_fqdn: '' # this is needed and is validated against a fqdn
+pushprox_client_proxy_url: 'http://{{ pushprox_proxy_listen_address }}/{{ pushproxy_proxy_listen_port }}/'
+pushprox_client_metrics_address:
+pushprox_client_metrics_port: 9369
+pushprox_client_proxy_retry_initial_wait: '1s'
+pushprox_client_proxy_retry_max_wait: '5s'
+pushprox_client_log_level: 'info'
+pushprox_client_log_format: 'logfmt' # or json
+
+# Local path to stash the archive and its extraction
+pushprox_archive_path: /tmp

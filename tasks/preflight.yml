@@ -1,0 +1,77 @@
+---
+- name: Assert usage of systemd as an init system
+  ansible.builtin.assert:
+    that: ansible_service_mgr == 'systemd'
+    msg: "This role only works with systemd"
+
+- name: Install package fact dependencies
+  become: true
+  ansible.builtin.package:
+    name: "{{ _pkg_fact_req }}"
+    state: present
+  when: (_pkg_fact_req)
+  vars:
+    _pkg_fact_req: "{% if (ansible_pkg_mgr == 'apt') %}\
+      {{ ('python-apt' if ansible_python_version is version('3', '<') else 'python3-apt') }}
+      {% else %}\
+      {% endif %}"
+
+- name: Gather package facts
+  ansible.builtin.package_facts:
+  when: "not 'packages' in ansible_facts"
+
+- name: Bail out if proxy ip is not valid
+  ansible.builtin.assert:
+    that:  "{{ pushprox_proxy_listen_address is ansible.utils.ip_address }}"
+  when: pushprox_proxy_mode|bool
+  tags:
+    - pushprox_install
+
+- name: Bail out if client fqdn is not valid
+  ansible.builtin.assert:
+    that: "{{ pushprox_client_fqdn is community.general.fqdn_valid }}"
+  when: pushprox_client_mode|bool
+
+- name: Bail out if proxy url is not valid
+  ansible.builtin.assert:
+    that: "{{ pushprox_client_proxy_url is ansible.builtin.url }}"
+  when: pushprox_client_mode|bool
+
+- name: Check if pushprox-proxy is installed
+  ansible.builtin.stat:
+    path: "{{ pushprox_binary_install_dir }}/pushprox-proxy"
+    checksum: "sha256"
+  register: __pushprox_proxy
+  check_mode: false
+  when: pushprox_proxy_mode|bool
+  tags:
+    - pushprox_install
+
+- name: Check if pushprox-client is installed
+  ansible.builtin.stat:
+    path: "{{ pushprox_binary_install_dir }}/pushprox-client"
+    checksum: "sha256"
+  register: __pushprox_client
+  check_mode: false
+  when: pushprox_client_mode|bool
+  tags:
+    - pushprox_install
+
+- name: Get pushprox binary checksum
+  when:
+    - not pushprox_skip_install
+  block:
+    - name: Get checksum list from github
+      ansible.builtin.set_fact:
+        __pushprox_checksums: "{{ lookup('url', pushprox_checksums_url, headers=_github_api_headers, wantlist=True) | list }}"
+      run_once: true
+      until: __pushprox_checksums is search('linux-' + go_arch + '.tar.gz')
+      retries: 10
+
+    - name: "Get checksum for {{ go_arch }}"
+      ansible.builtin.set_fact:
+        __pushprox_checksum: "{{ item.split(' ')[0] }}"
+      with_items: "{{ __pushprox_checksums }}"
+      when:
+        - "('linux-' + go_arch + '.tar.gz') in item"
+

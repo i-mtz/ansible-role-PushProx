@@ -1,0 +1,24 @@
+---
+
+- name: Copy the pushprox_proxy systemd service file
+  ansible.builtin.template:
+    src: pushprox_proxy.service.j2
+    dest: /etc/systemd/system/pushprox_proxy.service
+    owner: root
+    group: root
+    mode: 0644
+  when: pushprox_proxy_mode|bool
+  notify: restart pushprox_proxy
+
+- name: Copy the pushprox_client systemd service file
+  ansible.builtin.template:
+    src: pushprox_client.service.j2
+    dest: /etc/systemd/system/pushprox_client.service
+    owner: root
+    group: root
+    mode: 0644
+  when:
+    - not pushprox_proxy_mode|bool
+    - pushprox_client_mode|bool
+  notify: restart pushprox_client
+
