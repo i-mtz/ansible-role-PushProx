@@ -1,0 +1,44 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=PushProx proxy service
+After=network-online.target
+
+[Service]
+User={{ pushprox_system_user }}
+Group={{ pushprox_system_group }}
+SyslogIdentifier=pushprox_proxy
+
+ExecStart={{ pushprox_binary_install_dir }}/pushprox-proxy \
+  --registration.timeout={{ pushprox_proxy_registration_timeout }} \
+  --web.listen-address={{ pushprox_proxy_listen_address }}:{{ pushprox_proxy_listen_port }} \
+  --scrape.max-timeout={{ pushprox_proxy_scrape_max_timeout }} \
+  --scrape.default-timeout={{ pushprox_proxy_scrape_default_timeout }} 
+
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+MemoryHigh=500M
+MemoryMax=750M
+
+RestartSec=1
+StartLimitInterval=0
+
+{% set ns = namespace(protect_home = 'yes') %}
+{% for m in ansible_mounts if m.mount.startswith('/home') %}
+{%   set ns.protect_home = 'read-only' %}
+{% endfor %}
+ProtectHome={{ ns.protect_home }}
+NoNewPrivileges=yes
+
+{% if (ansible_facts.packages.systemd | first).version is version('232', '>=') %}
+ProtectSystem=strict
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=yes
+{% else %}
+ProtectSystem=full
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target

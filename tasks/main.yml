@@ -1,0 +1,62 @@
+---
+- name: Preflight
+  ansible.builtin.include_tasks:
+    file: preflight.yml
+    apply:
+      tags:
+        - pushprox_install
+        - pushprox_configure
+        - pushprox_run
+  tags:
+    - pushprox_install
+    - pushprox_configure
+    - pushprox_run
+
+- name: Install
+  ansible.builtin.include_tasks:
+    file: install.yml
+    apply:
+      become: true
+      tags:
+        - pushprox_install
+  tags:
+    - pushprox_install
+
+#- meta: end_play
+
+- name: Configure
+  ansible.builtin.include_tasks:
+    file: configure.yml
+    apply:
+      become: true
+      tags:
+        - pushprox_configure
+  tags:
+    - pushprox_configure
+
+- name: Ensure pushprox-proxy is enabled on boot
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: pushprox_proxy
+    enabled: true
+    state: started
+  when:
+    - not ansible_check_mode
+    - pushprox_proxy_mode|bool
+  tags:
+    - pushprox_run
+
+- name: Ensure pushprox-client is enabled on boot
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: pushprox_client
+    enabled: true
+    state: started
+  when:
+    - not ansible_check_mode
+    - not pushprox_proxy_mode|bool
+    - pushprox_client_mode|bool
+  tags:
+    - pushprox_run

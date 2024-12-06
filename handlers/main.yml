@@ -1,0 +1,20 @@
+---
+- name: Restart pushprox_proxy
+  listen: "restart pushprox_proxy"
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: pushprox_proxy
+    state: restarted
+  when:
+    - not ansible_check_mode
+
+- name: Restart pushprox_client
+  listen: "restart pushprox_client"
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: pushprox_client
+    state: restarted
+  when:
+    - not ansible_check_mode

@@ -1,0 +1,82 @@
+---
+- name: Create the pushprox group
+  ansible.builtin.group:
+    name: "{{ pushprox_system_group }}"
+    state: present
+    system: true
+  when: pushprox_system_group != "root"
+
+- name: Create the pushprox user
+  ansible.builtin.user:
+    name: "{{ pushprox_system_user }}"
+    groups: "{{ pushprox_system_group }}"
+    append: true
+    shell: /usr/sbin/nologin
+    system: true
+    create_home: false
+    home: /
+  when: pushprox_system_user != "root"
+
+- name: Get binaries tarball
+  when:
+    - not pushprox_skip_install
+  block:
+
+    - name: Download pushprox binary to local folder
+      become: false
+      ansible.builtin.get_url:
+        url: "{{ pushprox_binary_url }}"
+        dest: "{{ pushprox_archive_path }}/pushprox-{{ pushprox_version }}.linux-{{ go_arch }}.tar.gz"
+        checksum: "sha256:{{ __pushprox_checksum }}"
+        mode: '0644'
+      register: _download_binary
+      until: _download_binary is succeeded
+      retries: 5
+      delay: 2
+      delegate_to: localhost
+      check_mode: false
+
+    - name: Unpack pushprox binary
+      become: false
+      ansible.builtin.unarchive:
+        src: "{{ pushprox_archive_path }}/pushprox-{{ pushprox_version }}.linux-{{ go_arch }}.tar.gz"
+        dest: "{{ pushprox_archive_path }}"
+        creates: "{{ pushprox_archive_path }}/PushProx-{{ pushprox_version }}.linux-{{ go_arch }}/pushprox-proxy"
+      delegate_to: localhost
+      check_mode: false
+
+
+- name: Deploy proxy binary if needed
+  when: pushprox_proxy_mode|bool
+  block:
+
+    - name: Propagate pushprox proxy binaries
+      ansible.builtin.copy:
+        src: "{{ pushprox_archive_path }}/PushProx-{{ pushprox_version }}.linux-{{ go_arch }}/pushprox-proxy"
+        dest: "{{ pushprox_binary_install_dir }}/pushprox-proxy"
+        mode: 0755
+        owner: root
+        group: root
+      notify: restart pushprox_proxy
+      when:
+        - not __pushprox_proxy.stat.checksum == pushprox_proxy_binary_checksum
+        - not ansible_check_mode
+
+- name: Deploy client binary if needed
+  when:
+    - pushprox_client_mode|bool
+    - not pushprox_proxy_mode|bool
+  block:
+
+    - name: Propagate pushprox client binaries
+      ansible.builtin.copy:
+        src: "{{ pushprox_archive_path }}/PushProx-{{ pushprox_version }}.linux-{{ go_arch }}/pushprox-client"
+        dest: "{{ pushprox_binary_install_dir }}/pushprox-client"
+        mode: 0755
+        owner: root
+        group: root
+      notify: restart pushprox_client
+      when:
+        - not __pushprox_client.stat.checksum ==  pushprox_client_binary_checksum
+        - not ansible_check_mode
+
