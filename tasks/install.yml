@@ -57,10 +57,8 @@
         mode: 0755
         owner: root
         group: root
+        checksum: '{{ pushprox_proxy_binary_checksum }}'
       notify: restart pushprox_proxy
-      when:
-        - not __pushprox_proxy.stat.checksum == pushprox_proxy_binary_checksum
-        - not ansible_check_mode
 
 - name: Deploy client binary if needed
   when:
@@ -75,8 +73,6 @@
         mode: 0755
         owner: root
         group: root
+        checksum: '{{ pushprox_client_binary_checksum }}'
       notify: restart pushprox_client
-      when:
-        - not __pushprox_client.stat.checksum ==  pushprox_client_binary_checksum
-        - not ansible_check_mode
 

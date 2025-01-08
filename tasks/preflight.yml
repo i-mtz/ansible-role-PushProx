@@ -27,35 +27,10 @@
   tags:
     - pushprox_install
 
-- name: Bail out if client fqdn is not valid
-  ansible.builtin.assert:
-    that: "{{ pushprox_client_fqdn is community.general.fqdn_valid }}"
-  when: pushprox_client_mode|bool
-
 - name: Bail out if proxy url is not valid
   ansible.builtin.assert:
     that: "{{ pushprox_client_proxy_url is ansible.builtin.url }}"
   when: pushprox_client_mode|bool
-
-- name: Check if pushprox-proxy is installed
-  ansible.builtin.stat:
-    path: "{{ pushprox_binary_install_dir }}/pushprox-proxy"
-    checksum: "sha256"
-  register: __pushprox_proxy
-  check_mode: false
-  when: pushprox_proxy_mode|bool
-  tags:
-    - pushprox_install
-
-- name: Check if pushprox-client is installed
-  ansible.builtin.stat:
-    path: "{{ pushprox_binary_install_dir }}/pushprox-client"
-    checksum: "sha256"
-  register: __pushprox_client
-  check_mode: false
-  when: pushprox_client_mode|bool
-  tags:
-    - pushprox_install
 
 - name: Get pushprox binary checksum
   when:
