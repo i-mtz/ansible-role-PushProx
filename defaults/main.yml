@@ -30,7 +30,7 @@ pushprox_proxy_log_format: 'logfmt' # or json
 
 # client config
 pushprox_client_mode: true
-pushprox_client_fqdn: '' # this is needed and is validated against a fqdn
+pushprox_client_fqdn: '' # If unset will default to hostname --fqdn but can be overriden here
 pushprox_client_proxy_url: 'http://{{ pushprox_proxy_listen_address }}:{{ pushprox_proxy_listen_port }}/'
 pushprox_client_metrics_address: "127.0.0.1"
 pushprox_client_metrics_port: 9369

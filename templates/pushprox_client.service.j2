@@ -10,7 +10,9 @@ Group={{ pushprox_system_group }}
 SyslogIdentifier=pushprox_client
 
 ExecStart={{ pushprox_binary_install_dir }}/pushprox-client \
+{% if pushprox_client_fqdn %}
   --fqdn={{ pushprox_client_fqdn }} \
+{% endif %}
   --proxy-url={{ pushprox_client_proxy_url }} \
   --metrics-addr={{ pushprox_client_metrics_address }}:{{ pushprox_client_metrics_port }} \
   --proxy.retry.initial-wait={{ pushprox_client_proxy_retry_initial_wait }} \
